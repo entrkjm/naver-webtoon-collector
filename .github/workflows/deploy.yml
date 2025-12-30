@@ -29,11 +29,10 @@ jobs:
         with:
           service_account_key: ${{ secrets.GCP_SA_KEY }}
           project_id: ${{ env.PROJECT_ID }}
+          export_default_credentials: true
 
-      - name: Authenticate to Google Cloud
+      - name: Configure gcloud
         run: |
-          gcloud auth activate-service-account --key-file=${{ secrets.GCP_SA_KEY }}
-          gcloud config set project ${{ env.PROJECT_ID }}
           gcloud config set compute/region ${{ env.REGION }}
 
       - name: Prepare pipeline function
@@ -78,11 +77,10 @@ jobs:
         with:
           service_account_key: ${{ secrets.GCP_SA_KEY }}
           project_id: ${{ env.PROJECT_ID }}
+          export_default_credentials: true
 
-      - name: Authenticate to Google Cloud
+      - name: Configure gcloud
         run: |
-          gcloud auth activate-service-account --key-file=${{ secrets.GCP_SA_KEY }}
-          gcloud config set project ${{ env.PROJECT_ID }}
           gcloud config set compute/region ${{ env.REGION }}
 
       - name: Deploy Data Validation Function
