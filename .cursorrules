@@ -1,0 +1,217 @@
+# 네이버 웹툰 주간 차트 수집 파이프라인 - Cursor Rules
+
+> 이 파일은 프로젝트의 핵심 원칙과 규칙을 정의합니다. 프로젝트 진행에 따라 변경될 수 있습니다.
+
+---
+
+## 프로젝트 개요
+
+네이버 웹툰 주간 차트 데이터를 장기적으로 추적하고 분석하기 위한 ELT 파이프라인 구축 프로젝트입니다.
+
+**핵심 목표**:
+- 매주 네이버 웹툰 주간 차트 데이터 수집 및 저장
+- HTML 원본 보존 (GCS) + 정제된 데이터 저장 (BigQuery) 이중 구조
+- GCP Always Free 범위 내에서 운영
+- 확장 가능한 데이터 모델 설계
+
+---
+
+## 아키텍처 원칙
+
+### ELT 구조
+이 프로젝트는 **ELT(Extract-Load-Transform)** 아키텍처를 따릅니다:
+
+1. **Extract & Load Raw**: 웹 페이지 전체 HTML을 수집하여 GCS에 날짜별 파일로 저장 (데이터 원천 보존)
+2. **Transform & Load Refined**: 저장된 HTML에서 필요한 정보를 파싱하여 BigQuery의 관계형 테이블에 적재
+
+### 인프라 구성
+- **로컬 개발**: 파일 시스템으로 GCS/BigQuery 대체
+- **GCP 배포**: Cloud Functions + Cloud Scheduler + GCS + BigQuery
+- **비용**: GCP Always Free 범위 내 설계 필수
+- **실행 주기**: 주 1회 (매주 자동 실행)
+
+---
+
+## 데이터 모델
+
+### dim_webtoon (마스터 테이블)
+웹툰의 기본 정보를 저장하는 마스터 테이블입니다.
+
+**스키마**:
+- `webtoon_id` (STRING, PRIMARY KEY): 웹툰 고유 ID
+- `title` (STRING): 웹툰 제목
+- `author` (STRING, NULLABLE): 작가명 (향후 확장용)
+- `genre` (STRING, NULLABLE): 장르 (향후 확장용)
+- `created_at` (TIMESTAMP): 레코드 생성 시각
+- `updated_at` (TIMESTAMP): 레코드 수정 시각
+
+**특징**:
+- 웹툰 ID는 고유해야 함 (중복 불가)
+- 같은 웹툰이 여러 번 나타나도 하나의 레코드만 존재
+- 향후 작가, 장르 등 추가 정보 확장 가능
+
+### fact_weekly_chart (히스토리 테이블)
+주간 차트 순위 히스토리를 저장하는 팩트 테이블입니다.
+
+**스키마**:
+- `chart_date` (DATE, PARTITION KEY): 수집 날짜 (파티션 기준)
+- `webtoon_id` (STRING, FOREIGN KEY): 웹툰 ID → dim_webtoon 참조
+- `rank` (INTEGER): 주간 차트 순위
+- `collected_at` (TIMESTAMP): 데이터 수집 시각
+
+**특징**:
+- `chart_date`를 기준으로 파티션 설정 (BigQuery)
+- `(chart_date, webtoon_id)` 조합은 고유해야 함 (중복 불가)
+- Foreign Key 관계: `webtoon_id`는 `dim_webtoon.webtoon_id`에 존재해야 함
+
+---
+
+## 코딩 원칙
+
+### 멱등성 보장 (필수)
+- 수집 날짜(Partition)를 기준으로 중복 체크 필수
+- 같은 날짜에 여러 번 실행되어도 데이터가 중복되지 않도록 처리
+- INSERT 전 SELECT로 존재 여부 확인
+
+### 에러 핸들링 (필수)
+- 모든 외부 호출(HTTP 요청, 파일 I/O, DB 작업)에 에러 핸들링 필수
+- 네트워크 오류 시 재시도 로직 구현 (exponential backoff 권장)
+- HTML 구조 변경 시 유연한 파싱 로직 (여러 선택자 시도)
+- 실패 시 명확한 로그 메시지 기록
+
+### 모듈화
+- 함수 단위로 모듈화 (Extract, Parse, Transform 분리)
+- 각 모듈은 단일 책임 원칙 준수
+- 재사용 가능한 구조로 설계
+
+### 로깅
+- 중요한 작업 단계마다 로그 기록
+- 에러 발생 시 상세한 컨텍스트 포함
+- 로그 레벨 적절히 사용 (INFO, WARNING, ERROR)
+
+---
+
+## 파일 구조 규칙
+
+```
+naver_webtoon/
+├── src/                    # 핵심 로직 (로컬 개발)
+│   ├── extract.py         # HTML 수집
+│   ├── parse.py           # HTML 파싱
+│   ├── transform.py       # 데이터 변환
+│   ├── models.py          # 데이터 모델 정의
+│   └── utils.py           # 유틸리티 함수
+├── functions/             # Cloud Functions 코드
+│   ├── extract_function/
+│   └── transform_function/
+├── tests/                 # 테스트 코드
+├── scripts/               # 배포/설정 스크립트
+└── data/                  # 로컬 테스트용 데이터
+    ├── raw/               # HTML 원본 (GCS 대체)
+    └── processed/         # 정제된 데이터 (BigQuery 대체)
+```
+
+---
+
+## 네이버 웹툰 수집 특성
+
+### HTTP 요청
+- **User-Agent 헤더 필수**: 봇 차단 방지
+- **요청 간 딜레이**: 과도한 요청 방지 (최소 1초 간격 권장)
+- **세션 유지**: 필요 시 쿠키/세션 관리
+
+### HTML 파싱
+- **유연한 파싱**: HTML 구조 변경에 대비하여 여러 선택자 시도
+- **에러 처리**: 파싱 실패 시 부분 데이터라도 저장
+- **로깅**: 파싱 실패 시 상세한 로그 기록
+
+### 데이터 검증
+- 필수 필드 누락 체크
+- 데이터 타입 검증 (순위는 정수, 날짜는 날짜 형식)
+- Foreign Key 관계 검증
+
+---
+
+## 기술 스택
+
+### 개발 환경
+- **언어**: Python 3.9+
+- **주요 라이브러리**: requests, beautifulsoup4, pandas (선택사항)
+- **패키지 관리**: pip, requirements.txt
+
+### GCP 서비스
+- **Cloud Functions**: 서버리스 함수 실행
+- **Cloud Scheduler**: 주기적 작업 스케줄링
+- **Cloud Storage (GCS)**: HTML 원본 저장
+- **BigQuery**: 정제된 데이터 저장 및 분석
+
+### 배포
+- **GitHub**: 코드 버전 관리
+- **GitHub Actions**: CI/CD 자동화
+
+---
+
+## 비용 제약사항 (GCP Always Free)
+
+다음 제약사항을 반드시 준수해야 합니다:
+
+- **GCS**: 5GB 저장, 5,000 Class A 작업/월
+- **BigQuery**: 10GB 저장, 1TB 쿼리/월
+- **Cloud Functions**: 200만 요청/월, 400,000GB-초/월
+- **Cloud Scheduler**: 3개 작업 무료
+
+코드 작성 시 이러한 제약사항을 고려하여 효율적인 구현을 해야 합니다.
+
+---
+
+## 확장성 고려사항
+
+### 향후 확장 가능한 항목
+- 작가 정보
+- 별점
+- 댓글 수
+- 조회수
+- 좋아요 수
+
+### 확장 시 주의사항
+- `dim_webtoon` 테이블에 새로운 컬럼 추가 시 기존 데이터와의 호환성 유지
+- NULL 허용 또는 기본값 설정
+- 마이그레이션 스크립트 작성 (필요시)
+
+---
+
+## 코드 작성 가이드라인
+
+### Python 스타일
+- PEP 8 스타일 가이드 준수
+- 타입 힌트 사용 (가능한 경우)
+- 함수/클래스에 docstring 작성
+- 의미 있는 변수명 사용
+
+### 주석
+- 복잡한 로직에 "왜" 설명
+- 아키텍처 결정 이유 명시
+- TODO 주석에 날짜와 담당자 명시 (필요시)
+
+### 테스트
+- 주요 함수에 대한 단위 테스트 작성 (가능한 경우)
+- 로컬 테스트 환경에서 충분히 검증 후 배포
+
+---
+
+## 참고 문서
+
+작업 시 다음 문서를 참고하세요:
+- `PROGRESS.md`: 전체 진행 상황 추적
+- `STATUS.md`: 현재 작업 상태
+- `01_전체_구현_계획.md`: 상세 구현 계획
+- `02_로컬_테스트_계획.md`: 로컬 테스트 상세 계획
+
+---
+
+## 주의사항
+
+- 이 파일은 프로젝트 진행에 따라 변경될 수 있습니다.
+- 중요한 변경사항이 있을 경우 관련 문서도 함께 업데이트하세요.
+- 새로운 원칙이나 규칙이 추가되면 이 파일에 반영하세요.
+
