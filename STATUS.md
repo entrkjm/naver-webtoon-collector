@@ -1,8 +1,8 @@
 # 현재 작업 상태
 
-> **마지막 업데이트**: 2025-12-29  
-> **현재 세션**: Phase 3 완료 + GitHub Actions CI/CD 구축 완료  
-> **최근 작업**: GitHub Actions CI/CD 구축 완료, 자동 배포 시스템 정상 작동
+> **마지막 업데이트**: 2025-12-31  
+> **현재 세션**: Phase 3 완료 + GitHub Actions CI/CD 구축 완료 + 파이프라인 최종 테스트 완료  
+> **최근 작업**: 파이프라인 최종 테스트 완료, 정상 작동 확인
 
 ---
 
@@ -14,15 +14,7 @@
 
 ## 🔄 진행 중인 작업
 
-**다음 단계: 파이프라인 최종 테스트** (준비 중)
-- [x] Cloud Functions 디렉토리 구조 생성
-- [x] `main.py` 작성 (HTTP 트리거 진입점)
-- [x] `requirements.txt` 작성
-- [x] `deploy.sh` 배포 스크립트 작성
-- [x] `README.md` 작성
-- [x] `src/utils.py` 수정: 환경 변수 지원
-- [ ] 로컬 Functions Framework 테스트
-- [ ] Cloud Functions 배포 및 테스트
+현재 진행 중인 작업 없음
 
 ---
 
@@ -167,7 +159,22 @@
   - pipeline-function 및 data-validation-function ERROR 로그 감지 설정
   - 알림 시스템 테스트 완료 (알림 수신 확인)
 
-**완료일**: 2025-12-29
+- [x] GitHub Actions CI/CD 구축 (완료)
+  - GitHub Actions 워크플로우 파일 생성 (`.github/workflows/deploy.yml`)
+  - GCP 인증 설정 (서비스 계정 키)
+  - Cloud Functions 배포 자동화
+  - 권한 설정 스크립트 작성 (`scripts/setup/fix_github_actions_permissions.sh`)
+  - CI/CD 문서 작성 (`docs/setup/github_actions_setup.md`)
+  - 자동 배포 시스템 정상 작동 확인
+
+- [x] 파이프라인 최종 테스트 (완료)
+  - Cloud Scheduler를 통한 수동 실행 테스트 성공
+  - BigQuery 데이터 수집 확인 (2,314개 레코드, 3일치 데이터)
+  - GCS 원본 데이터 저장 확인
+  - dim_webtoon 마스터 테이블 업데이트 확인 (742개 웹툰)
+  - 파이프라인 정상 작동 확인 (에러 없음)
+
+**완료일**: 2025-12-31
 
 ---
 
