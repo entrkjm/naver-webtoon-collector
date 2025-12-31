@@ -55,7 +55,7 @@ jobs:
         run: |
           gcloud functions deploy pipeline-function \
             --gen2 \
-            --runtime=python39 \
+            --runtime=python311 \
             --region=${{ env.REGION }} \
             --source=. \
             --entry-point=main \
