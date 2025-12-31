@@ -52,6 +52,13 @@ gcloud projects add-iam-policy-binding "$PROJECT_ID" \
     --quiet
 
 echo ""
+echo "4-1. webtoon-collector에 Cloud Run Admin 역할 부여 (Gen2 함수 업데이트용)..."
+gcloud projects add-iam-policy-binding "$PROJECT_ID" \
+    --member="serviceAccount:${SERVICE_ACCOUNT_EMAIL}" \
+    --role="roles/run.admin" \
+    --quiet
+
+echo ""
 echo "5. Compute Engine 서비스 계정에 필요한 역할 부여..."
 # Cloud Functions Developer 역할
 gcloud projects add-iam-policy-binding "$PROJECT_ID" \
@@ -87,8 +94,9 @@ echo "설정된 권한:"
 echo "  1. $SERVICE_ACCOUNT_EMAIL → 자신에게 serviceAccountUser 역할"
 echo "  2. $SERVICE_ACCOUNT_EMAIL → $COMPUTE_SA에 serviceAccountUser 역할"
 echo "  3. $SERVICE_ACCOUNT_EMAIL → 프로젝트에 cloudbuild.builds.builder 역할"
-echo "  4. $COMPUTE_SA → 프로젝트에 cloudfunctions.developer 역할"
-echo "  5. $COMPUTE_SA → 프로젝트에 cloudbuild.builds.builder 역할"
-echo "  6. $CLOUD_BUILD_SA → $SERVICE_ACCOUNT_EMAIL에 serviceAccountUser 역할"
-echo "  7. $CLOUD_BUILD_SA → 프로젝트에 cloudfunctions.developer 역할"
+echo "  4. $SERVICE_ACCOUNT_EMAIL → 프로젝트에 run.admin 역할 (Gen2 함수 업데이트용)"
+echo "  5. $COMPUTE_SA → 프로젝트에 cloudfunctions.developer 역할"
+echo "  6. $COMPUTE_SA → 프로젝트에 cloudbuild.builds.builder 역할"
+echo "  7. $CLOUD_BUILD_SA → $SERVICE_ACCOUNT_EMAIL에 serviceAccountUser 역할"
+echo "  8. $CLOUD_BUILD_SA → 프로젝트에 cloudfunctions.developer 역할"
 

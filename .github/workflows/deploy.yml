@@ -53,22 +53,9 @@ jobs:
           BIGQUERY_PROJECT_ID: ${{ env.PROJECT_ID }}
           BIGQUERY_DATASET_ID: naver_webtoon
         run: |
-          # Gen2 함수는 Cloud Run 서비스로 배포되므로 run services로 확인
-          echo "기존 함수 확인 중..."
-          if gcloud run services describe pipeline-function --region=${{ env.REGION }} --project=${{ env.PROJECT_ID }} &>/dev/null; then
-            echo "기존 함수 발견, 삭제 후 재배포..."
-            # 기존 함수 삭제 (409 오류 방지)
-            gcloud run services delete pipeline-function \
-              --region=${{ env.REGION }} \
-              --project=${{ env.PROJECT_ID }} \
-              --quiet || echo "⚠️  삭제 실패 (이미 삭제되었을 수 있음)"
-            echo "기존 함수 삭제 완료, 잠시 대기..."
-            sleep 5
-          else
-            echo "새 함수 배포 중..."
-          fi
-          
-          # 함수 배포
+          # gcloud functions deploy는 기본적으로 기존 함수를 업데이트합니다
+          # Gen2 함수는 Cloud Run 서비스로 배포되므로 run.admin 권한이 필요합니다
+          echo "함수 배포/업데이트 중..."
           gcloud functions deploy pipeline-function \
             --gen2 \
             --runtime=python311 \
@@ -115,22 +102,9 @@ jobs:
           MIN_EXPECTED_RECORDS: 500
           NOTIFICATION_CHANNEL_EMAIL: ${{ secrets.NOTIFICATION_CHANNEL_EMAIL }}
         run: |
-          # Gen2 함수는 Cloud Run 서비스로 배포되므로 run services로 확인
-          echo "기존 함수 확인 중..."
-          if gcloud run services describe data-validation-function --region=${{ env.REGION }} --project=${{ env.PROJECT_ID }} &>/dev/null; then
-            echo "기존 함수 발견, 삭제 후 재배포..."
-            # 기존 함수 삭제 (409 오류 방지)
-            gcloud run services delete data-validation-function \
-              --region=${{ env.REGION }} \
-              --project=${{ env.PROJECT_ID }} \
-              --quiet || echo "⚠️  삭제 실패 (이미 삭제되었을 수 있음)"
-            echo "기존 함수 삭제 완료, 잠시 대기..."
-            sleep 5
-          else
-            echo "새 함수 배포 중..."
-          fi
-          
-          # 함수 배포
+          # gcloud functions deploy는 기본적으로 기존 함수를 업데이트합니다
+          # Gen2 함수는 Cloud Run 서비스로 배포되므로 run.admin 권한이 필요합니다
+          echo "함수 배포/업데이트 중..."
           gcloud functions deploy data-validation-function \
             --gen2 \
             --runtime=python311 \
