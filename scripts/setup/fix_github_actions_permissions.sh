@@ -52,10 +52,17 @@ gcloud projects add-iam-policy-binding "$PROJECT_ID" \
     --quiet
 
 echo ""
-echo "5. Compute Engine 서비스 계정에 Cloud Functions Developer 역할 부여..."
+echo "5. Compute Engine 서비스 계정에 필요한 역할 부여..."
+# Cloud Functions Developer 역할
 gcloud projects add-iam-policy-binding "$PROJECT_ID" \
     --member="serviceAccount:${COMPUTE_SA}" \
     --role="roles/cloudfunctions.developer" \
+    --quiet
+
+# Cloud Build Builder 역할 (경고 해결)
+gcloud projects add-iam-policy-binding "$PROJECT_ID" \
+    --member="serviceAccount:${COMPUTE_SA}" \
+    --role="roles/cloudbuild.builds.builder" \
     --quiet
 
 echo ""
@@ -81,6 +88,7 @@ echo "  1. $SERVICE_ACCOUNT_EMAIL → 자신에게 serviceAccountUser 역할"
 echo "  2. $SERVICE_ACCOUNT_EMAIL → $COMPUTE_SA에 serviceAccountUser 역할"
 echo "  3. $SERVICE_ACCOUNT_EMAIL → 프로젝트에 cloudbuild.builds.builder 역할"
 echo "  4. $COMPUTE_SA → 프로젝트에 cloudfunctions.developer 역할"
-echo "  5. $CLOUD_BUILD_SA → $SERVICE_ACCOUNT_EMAIL에 serviceAccountUser 역할"
-echo "  6. $CLOUD_BUILD_SA → 프로젝트에 cloudfunctions.developer 역할"
+echo "  5. $COMPUTE_SA → 프로젝트에 cloudbuild.builds.builder 역할"
+echo "  6. $CLOUD_BUILD_SA → $SERVICE_ACCOUNT_EMAIL에 serviceAccountUser 역할"
+echo "  7. $CLOUD_BUILD_SA → 프로젝트에 cloudfunctions.developer 역할"
 
