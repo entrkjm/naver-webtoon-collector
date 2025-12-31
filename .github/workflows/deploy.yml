@@ -24,19 +24,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
         with:
           project_id: ${{ env.PROJECT_ID }}
-
-      - name: Authenticate to Google Cloud
-        env:
-          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
-        run: |
-          echo "$GCP_SA_KEY" > $HOME/gcloud-service-key.json
-          gcloud auth activate-service-account --key-file=$HOME/gcloud-service-key.json
-          gcloud config set project ${{ env.PROJECT_ID }}
-          rm -f $HOME/gcloud-service-key.json
 
       - name: Prepare pipeline function
         working-directory: functions/pipeline_function
@@ -78,19 +74,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
         with:
           project_id: ${{ env.PROJECT_ID }}
-
-      - name: Authenticate to Google Cloud
-        env:
-          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
-        run: |
-          echo "$GCP_SA_KEY" > $HOME/gcloud-service-key.json
-          gcloud auth activate-service-account --key-file=$HOME/gcloud-service-key.json
-          gcloud config set project ${{ env.PROJECT_ID }}
-          rm -f $HOME/gcloud-service-key.json
 
       - name: Deploy Data Validation Function
         working-directory: functions/data_validation_function
