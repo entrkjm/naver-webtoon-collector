@@ -410,23 +410,28 @@
 ### 2.7 GitHub Actions CI/CD 구축
 **목표**: 코드 배포 자동화
 
-- [ ] GitHub Actions 워크플로우 파일 생성 (`.github/workflows/deploy.yml`)
-- [ ] GCP 인증 설정 (서비스 계정 키 또는 Workload Identity)
-- [ ] Cloud Functions 배포 자동화
-- [ ] BigQuery 스키마 변경 시 자동 적용 (선택사항)
-- [ ] CI/CD 문서 작성
+- [x] GitHub Actions 워크플로우 파일 생성 (`.github/workflows/deploy.yml`)
+- [x] GCP 인증 설정 (서비스 계정 키)
+- [x] Cloud Functions 배포 자동화
+- [x] 권한 설정 스크립트 작성 (`scripts/setup/fix_github_actions_permissions.sh`)
+- [x] CI/CD 문서 작성 (`docs/setup/github_actions_setup.md`)
 
-**상태**: 🔴 미시작  
-**완료일**: -  
-**비고**: -
+**상태**: ✅ 완료  
+**완료일**: 2025-12-29  
+**비고**: Cloud Run Admin 권한 추가로 409 오류 해결
 
 **검증 항목**:
-- [ ] GitHub에 푸시 시 자동 배포 확인
-- [ ] 배포 로그 확인
+- [x] GitHub에 푸시 시 자동 배포 확인
+- [x] 배포 로그 확인
+- [x] pipeline-function 배포 성공
+- [x] data-validation-function 배포 성공
 
 **산출물**:
-- [ ] `.github/workflows/deploy.yml`
-- [ ] CI/CD 문서
+- [x] `.github/workflows/deploy.yml`
+- [x] `scripts/setup/fix_github_actions_permissions.sh`
+- [x] `docs/setup/github_actions_setup.md`
+- [x] `docs/setup/github_repository_setup.md`
+- [x] `docs/setup/github_token_setup.md`
 
 ---
 
