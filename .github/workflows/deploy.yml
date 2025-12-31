@@ -56,12 +56,19 @@ jobs:
           # Gen2 함수는 Cloud Run 서비스로 배포되므로 run services로 확인
           echo "기존 함수 확인 중..."
           if gcloud run services describe pipeline-function --region=${{ env.REGION }} --project=${{ env.PROJECT_ID }} &>/dev/null; then
-            echo "기존 함수 발견, 업데이트 중..."
+            echo "기존 함수 발견, 삭제 후 재배포..."
+            # 기존 함수 삭제 (409 오류 방지)
+            gcloud run services delete pipeline-function \
+              --region=${{ env.REGION }} \
+              --project=${{ env.PROJECT_ID }} \
+              --quiet || echo "⚠️  삭제 실패 (이미 삭제되었을 수 있음)"
+            echo "기존 함수 삭제 완료, 잠시 대기..."
+            sleep 5
           else
             echo "새 함수 배포 중..."
           fi
           
-          # gcloud functions deploy는 자동으로 업데이트하므로 그냥 실행
+          # 함수 배포
           gcloud functions deploy pipeline-function \
             --gen2 \
             --runtime=python311 \
@@ -74,11 +81,7 @@ jobs:
             --memory=512MB \
             --set-env-vars "GCS_BUCKET_NAME=$GCS_BUCKET_NAME,BIGQUERY_PROJECT_ID=$BIGQUERY_PROJECT_ID,BIGQUERY_DATASET_ID=$BIGQUERY_DATASET_ID,DATA_FORMAT=jsonl" \
             --service-account=${{ env.SERVICE_ACCOUNT }} \
-            --max-instances=1 || {
-              echo "⚠️  배포 실패, 권한 문제일 수 있습니다."
-              echo "권한 수정 스크립트를 실행했는지 확인하세요: ./scripts/setup/fix_github_actions_permissions.sh"
-              exit 1
-            }
+            --max-instances=1
 
   deploy-data-validation-function:
     name: Deploy Data Validation Function
@@ -115,12 +118,19 @@ jobs:
           # Gen2 함수는 Cloud Run 서비스로 배포되므로 run services로 확인
           echo "기존 함수 확인 중..."
           if gcloud run services describe data-validation-function --region=${{ env.REGION }} --project=${{ env.PROJECT_ID }} &>/dev/null; then
-            echo "기존 함수 발견, 업데이트 중..."
+            echo "기존 함수 발견, 삭제 후 재배포..."
+            # 기존 함수 삭제 (409 오류 방지)
+            gcloud run services delete data-validation-function \
+              --region=${{ env.REGION }} \
+              --project=${{ env.PROJECT_ID }} \
+              --quiet || echo "⚠️  삭제 실패 (이미 삭제되었을 수 있음)"
+            echo "기존 함수 삭제 완료, 잠시 대기..."
+            sleep 5
           else
             echo "새 함수 배포 중..."
           fi
           
-          # gcloud functions deploy는 자동으로 업데이트하므로 그냥 실행
+          # 함수 배포
           gcloud functions deploy data-validation-function \
             --gen2 \
             --runtime=python311 \
@@ -133,9 +143,5 @@ jobs:
             --timeout=540s \
             --memory=256MB \
             --max-instances=1 \
-            --set-env-vars "BIGQUERY_PROJECT_ID=$BIGQUERY_PROJECT_ID,BIGQUERY_DATASET_ID=$BIGQUERY_DATASET_ID,MIN_EXPECTED_RECORDS=$MIN_EXPECTED_RECORDS,NOTIFICATION_CHANNEL_EMAIL=$NOTIFICATION_CHANNEL_EMAIL" || {
-              echo "⚠️  배포 실패, 권한 문제일 수 있습니다."
-              echo "권한 수정 스크립트를 실행했는지 확인하세요: ./scripts/setup/fix_github_actions_permissions.sh"
-              exit 1
-            }
+            --set-env-vars "BIGQUERY_PROJECT_ID=$BIGQUERY_PROJECT_ID,BIGQUERY_DATASET_ID=$BIGQUERY_DATASET_ID,MIN_EXPECTED_RECORDS=$MIN_EXPECTED_RECORDS,NOTIFICATION_CHANNEL_EMAIL=$NOTIFICATION_CHANNEL_EMAIL"
 
