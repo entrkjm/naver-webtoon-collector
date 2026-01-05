@@ -9,6 +9,8 @@ import os
 from datetime import datetime, timedelta
 from typing import Dict, Any
 
+import functions_framework
+
 from google.cloud import bigquery
 from google.cloud import monitoring_v3
 
@@ -202,6 +204,7 @@ def send_alert(message: str, subject: str = "파이프라인 데이터 수집 �
         logger.error(f"알림 전송 실패: {e}", exc_info=True)
 
 
+@functions_framework.http
 def main(request):
     """
     Cloud Function 진입점
@@ -233,11 +236,12 @@ def main(request):
                 subject=f"파이프라인 데이터 수집 실패 - {results['date']}"
             )
             
+            # 검증 실패는 비즈니스 로직의 일부이므로 200 OK 반환
             return {
                 "status": "failed",
                 "message": "데이터 수집 실패 감지",
                 "results": results
-            }, 500
+            }, 200
         else:
             logger.info("✅ 모든 검증 통과")
             return {
