@@ -51,6 +51,9 @@ data/processed/
 .env
 .env.local
 
+# GitHub 토큰 (보안)
+.github_token
+
 # GCP 인증 키 (보안)
 *.json
 !package.json
